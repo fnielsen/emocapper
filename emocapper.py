@@ -132,14 +132,14 @@ def main(arguments):
         Arguments in the docopt format
 
     """
+    # Initialize file
+    emocap_writer = EmocapWriter(filename=arguments['--output'])
+
     headset = emotiv.Emotiv(display_output=False)
     gevent.spawn(headset.setup)
     gevent.sleep(0)
 
-    # Initialize file
-    emocap_writer = EmocapWriter(filename=arguments['--output'])
     end_time = time.time() + float(arguments['--time'])
-
     try:
         while end_time > time.time():
             packet = headset.dequeue()
