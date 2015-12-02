@@ -4,14 +4,17 @@
 Usage:
   emocapper -h | --help
   emocapper --version
-  emocapper record [(--verbose ...)] [--output=<output>] [--time=<seconds>]
+  emocapper record [(--verbose ...)] [--output=<output>] [--duration=<seconds>]
+  emocapper showmaxelectrode
+  emocapper showqualities
+  emocapper showvalues
 
 Options:
   -h --help                    Show this screen.
   --version                    Show version.
   -v --verbose                 Show more information
   -o --output=<output>         Filename [default: recording.csv]
-  --time=<seconds>             Secords to record [default: 10]
+  --duration=<seconds>             Secords to record [default: 10]
 
 """
 
@@ -25,12 +28,16 @@ if platform.system() == "Windows":
     import socket
     _ = socket  # To avoid 'Unused import socket'
 
-import time
+from time import time
 
 from emokit import emotiv
 
 import gevent
 
+
+EMOTIV_SENSOR_NAMES = [
+    'F7', 'F8', 'AF3', 'AF4', 'FC5', 'FC6', 'F3', 'F4', 'O1', 'O2',
+    'P7', 'P8', 'T7', 'T8']
 
 # Translation between Emotiv and Emocap electrodes
 EMOTIV_TO_EMOCAP_MAP = {
@@ -51,10 +58,13 @@ EMOTIV_TO_EMOCAP_MAP = {
 }
 
 
+FILENAME = 'recording.csv'
+
+
 class EmocapWriter(object):
     """Writer for Emocap data to file."""
 
-    def __init__(self, filename='recording.csv'):
+    def __init__(self, filename=FILENAME):
         """Open file and write header.
 
         Parameters
@@ -64,9 +74,7 @@ class EmocapWriter(object):
 
         """
         self.fid = open(filename, 'w')
-        self.emotiv_sensor_names = [
-            'F7', 'F8', 'AF3', 'AF4', 'FC5', 'FC6', 'F3', 'F4', 'O1', 'O2',
-            'P7', 'P8', 'T7', 'T8']
+        self.emotiv_sensor_names = EMOTIV_SENSOR_NAMES
         self.sensor_names = [
             EMOTIV_TO_EMOCAP_MAP[name] for name in self.emotiv_sensor_names]
         self.quality_names = [name + ' quality' for name in self.sensor_names]
@@ -108,7 +116,7 @@ class EmocapWriter(object):
 
         """
         data = {
-            'Time': time.time(),
+            'Time': time(),
             'Packets received': headset.packets_received,
             'Queue size': headset.packets.qsize(),
             'Counter': packet.counter,
@@ -123,25 +131,27 @@ class EmocapWriter(object):
         self.write_line(data)
 
 
-def main(arguments):
-    """Command-line interface.
+def record(filename=FILENAME, duration=10):
+    """Read EEG data from device and write to file.
 
     Parameters
     ----------
-    arguments : dict
-        Arguments in the docopt format
+    filename : str
+        Filename for output
+    duration : float, int
+        Time in seconds for the recording
 
     """
     # Initialize file
-    emocap_writer = EmocapWriter(filename=arguments['--output'])
+    emocap_writer = EmocapWriter(filename=filename)
 
     headset = emotiv.Emotiv(display_output=False)
     gevent.spawn(headset.setup)
     gevent.sleep(0)
 
-    end_time = time.time() + float(arguments['--time'])
+    end_time = time() + float(duration)
     try:
-        while end_time > time.time():
+        while end_time > time():
             packet = headset.dequeue()
             emocap_writer.write_packet(headset, packet)
             gevent.sleep(0)
@@ -151,6 +161,114 @@ def main(arguments):
         headset.close()
     finally:
         headset.close()
+
+
+def sorted_names():
+    """Return Emocap and Emotiv electrode names sorted.
+
+    Returns
+    -------
+    names : list of 2-tuple with str
+        List of pairs with electrode names
+
+    """
+    sensor_names = [EMOTIV_TO_EMOCAP_MAP[name] for name in EMOTIV_SENSOR_NAMES]
+    emotiv_sensor_names = EMOTIV_SENSOR_NAMES[:]
+    names = sorted(zip(sensor_names, emotiv_sensor_names))
+    return names
+
+
+def show_max_electrode():
+    """Show name of max electrode of electrode signal."""
+    names = sorted_names()
+    headset = emotiv.Emotiv(display_output=False)
+    gevent.spawn(headset.setup)
+    gevent.sleep(0)
+
+    # Compute an offset for each electrode
+    for _ in range(10):
+        packet = headset.dequeue()
+        gevent.sleep(0)
+    offsets = [packet.sensors[emotiv_name]['value']
+               for name, emotiv_name in names]
+
+    try:
+        while True:
+            packet = headset.dequeue()
+            values_and_names = [
+                (packet.sensors[emotiv_name]['value'] - offset, name)
+                for (name, emotiv_name), offset in zip(names, offsets)]
+            name_of_max = max(values_and_names)[1]
+            print(name_of_max)
+            gevent.sleep(0)
+    except KeyboardInterrupt:
+        headset.close()
+    finally:
+        headset.close()
+
+
+def show_qualities():
+    """Show quality of electrode signal."""
+    names = sorted_names()
+    headset = emotiv.Emotiv(display_output=False)
+    gevent.spawn(headset.setup)
+    gevent.sleep(0)
+
+    try:
+        while True:
+            packet = headset.dequeue()
+            line = " - ".join([
+                "%s = %1d" % (name, packet.sensors[emotiv_name]['quality'])
+                for name, emotiv_name in names])
+            print(line)
+            gevent.sleep(0)
+    except KeyboardInterrupt:
+        headset.close()
+    finally:
+        headset.close()
+
+
+def show_values():
+    """Show values of electrode signal."""
+    names = sorted_names()
+    headset = emotiv.Emotiv(display_output=False)
+    gevent.spawn(headset.setup)
+    gevent.sleep(0)
+
+    try:
+        while True:
+            packet = headset.dequeue()
+            line = " - ".join([
+                "%s = %5d" % (name, packet.sensors[emotiv_name]['value'])
+                for name, emotiv_name in names])
+            print(line)
+            gevent.sleep(0)
+    except KeyboardInterrupt:
+        headset.close()
+    finally:
+        headset.close()
+
+
+def main(arguments):
+    """Command-line interface.
+
+    Parameters
+    ----------
+    arguments : dict
+        Arguments in the docopt format
+
+    """
+    if arguments['record']:
+        record(filename=arguments['--output'],
+               duration=arguments['--duration'])
+    elif arguments['showmaxelectrode']:
+        show_max_electrode()
+    elif arguments['showqualities']:
+        show_qualities()
+    elif arguments['showvalues']:
+        show_values()
+    else:
+        raise Exception
 
 
 if __name__ == '__main__':
