@@ -3,7 +3,7 @@ emocapper
 
 Record 3 seconds to file with default filename 'recording.csv':
 
-    $ python emocapper.py record --time=3
+    $ python emocapper.py record --duration=3
   
 An electrode signal can be plotted with 
 
