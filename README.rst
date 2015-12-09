@@ -18,7 +18,7 @@ An electrode signal can be plotted with
     <matplotlib.axes._subplots.AxesSubplot object at 0x7f88a10b1190>
     >>> show()
 
- Show qualities
- --------------
+Show qualities
+--------------
  
     $ emocapper showqualities
