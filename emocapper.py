@@ -268,7 +268,7 @@ def show_values():
         headset.close()
 
 
-def main(arguments):
+def main():
     """Command-line interface.
 
     Parameters
@@ -277,6 +277,10 @@ def main(arguments):
         Arguments in the docopt format
 
     """
+    import docopt
+
+    arguments = docopt.docopt(__doc__)
+
     if arguments['record']:
         record(filename=arguments['--output'],
                duration=arguments['--duration'])
@@ -293,6 +297,4 @@ def main(arguments):
 
 
 if __name__ == '__main__':
-    import docopt
-
-    main(docopt.docopt(__doc__))
+    main()
