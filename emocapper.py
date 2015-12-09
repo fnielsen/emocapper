@@ -14,7 +14,7 @@ Options:
   --version                    Show version.
   -v --verbose                 Show more information
   -o --output=<output>         Filename [default: recording.csv]
-  --duration=<seconds>             Secords to record [default: 10]
+  --duration=<seconds>         Secords to record [default: 350]
 
 """
 
