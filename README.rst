@@ -1,3 +1,4 @@
+=========
 emocapper
 =========
 
@@ -20,4 +21,4 @@ An electrode signal can be plotted with
  Show qualities
  --------------
  
-     $ emocapper showqualities
+    $ emocapper showqualities
