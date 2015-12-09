@@ -5,6 +5,7 @@ Usage:
   emocapper -h | --help
   emocapper --version
   emocapper record [(--verbose ...)] [--output=<output>] [--duration=<seconds>]
+  emocapper showbattery
   emocapper showmaxelectrode
   emocapper showqualities
   emocapper showvalues
@@ -228,6 +229,24 @@ def show_qualities():
         headset.close()
 
 
+def show_battery():
+    """Show battery signal."""
+    headset = emotiv.Emotiv(display_output=False)
+    gevent.spawn(headset.setup)
+    gevent.sleep(0)
+
+    try:
+        while True:
+            packet = headset.dequeue()
+            line = "%d%%" % (packet.battery,)
+            print(line)
+            gevent.sleep(0)
+    except KeyboardInterrupt:
+        headset.close()
+    finally:
+        headset.close()
+
+
 def show_values():
     """Show values of electrode signal."""
     names = sorted_names()
@@ -261,6 +280,8 @@ def main(arguments):
     if arguments['record']:
         record(filename=arguments['--output'],
                duration=arguments['--duration'])
+    elif arguments['showbattery']:
+        show_battery()
     elif arguments['showmaxelectrode']:
         show_max_electrode()
     elif arguments['showqualities']:
