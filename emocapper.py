@@ -14,20 +14,22 @@ Options:
   -h --help                    Show this screen.
   --version                    Show version.
   -v --verbose                 Show more information
-  -o --output=<output>         Filename [default: recording.csv]
+  -o --output=<output>         Filename 
   --duration=<seconds>         Secords to record [default: 350]
 
 """
 
 from __future__ import print_function
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 
 import platform
 if platform.system() == "Windows":
     import socket
     _ = socket  # To avoid 'Unused import socket'
+
+from datetime import datetime
 
 from time import time
 
@@ -59,13 +61,11 @@ EMOTIV_TO_EMOCAP_MAP = {
 }
 
 
-FILENAME = 'recording.csv'
-
 
 class EmocapWriter(object):
     """Writer for Emocap data to file."""
 
-    def __init__(self, filename=FILENAME):
+    def __init__(self, filename=None):
         """Open file and write header.
 
         Parameters
@@ -74,6 +74,8 @@ class EmocapWriter(object):
             Filename for the output file.
 
         """
+        if filename is None:
+            filename = 'recording-%s.csv' % (datetime.now().isoformat(),)
         self.fid = open(filename, 'w')
         self.emotiv_sensor_names = EMOTIV_SENSOR_NAMES
         self.sensor_names = [
@@ -132,7 +134,7 @@ class EmocapWriter(object):
         self.write_line(data)
 
 
-def record(filename=FILENAME, duration=10):
+def record(filename=None, duration=10):
     """Read EEG data from device and write to file.
 
     Parameters
