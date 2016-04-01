@@ -15,13 +15,13 @@ Options:
   --version                    Show version.
   -v --verbose                 Show more information
   -o --output=<output>         Filename 
-  --duration=<seconds>         Secords to record [default: 350]
+  --duration=<seconds>         Seconds to record [default: 350]
 
 """
 
 from __future__ import print_function
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 import platform
